@@ -1,4 +1,4 @@
-apply plugin: 'android-library'
+apply plugin: 'com.android.library'
 apply plugin: 'com.jfrog.bintray'
 
 group = "com.openxcplatform"
@@ -16,6 +16,8 @@ android {
     lintOptions {
         abortOnError false
     }
+    buildToolsVersion '26.0.1'
+    useLibrary 'org.apache.http.legacy'
 }
 
 apply plugin: 'com.github.dcendents.android-maven'
@@ -25,7 +27,9 @@ dependencies {
     compile 'com.google.guava:guava:18.0'
     compile 'com.google.protobuf:protobuf-java:2.6.1'
     compile 'commons-io:commons-io:2.4'
-    compile 'com.android.support:support-v4:19.1.0'
+    compile 'com.android.support:support-v4:26.+'
+    compile 'com.android.support:appcompat-v7:26.+'
+    compile "net.gotev:uploadservice:3.4"
 
     testCompile 'junit:junit:4.12'
     testCompile 'org.hamcrest:hamcrest-all:1.3'

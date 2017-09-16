@@ -22,6 +22,8 @@ import com.openxc.VehicleManager;
 import com.openxc.enabler.preferences.PreferenceManagerService;
 import com.openxcplatform.enabler.R;
 
+import net.gotev.uploadservice.UploadService;
+
 /** The OpenXC Enabler app is primarily for convenience, but it also increases
  * the reliability of OpenXC by handling background tasks on behalf of client
  * applications.
@@ -50,6 +52,8 @@ public class OpenXcEnablerActivity extends FragmentActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        UploadService.NAMESPACE = BuildConfig.APPLICATION_ID;
 
         String bugsnagToken = BuildConfig.BUGSNAG_TOKEN;
         if(bugsnagToken != null && !bugsnagToken.isEmpty()) {
