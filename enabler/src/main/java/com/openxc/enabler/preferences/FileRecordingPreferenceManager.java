@@ -54,8 +54,9 @@ public class FileRecordingPreferenceManager extends VehiclePreferenceManager {
                     mCurrentDirectory = directory;
                     stopRecording();
 
+                    String device_id = getVehicleManager().getVehicleInterfaceDeviceId();
                     mFileRecorder = new FileRecorderSink(
-                            new AndroidFileOpener(directory), getContext(), directory);
+                            new AndroidFileOpener(directory), getContext(), directory, device_id);
                     getVehicleManager().addSink(mFileRecorder);
                 }
             } else {

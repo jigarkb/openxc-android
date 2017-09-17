@@ -2,6 +2,7 @@ package com.openxc.sinks;
 
 import android.content.Context;
 import android.os.Environment;
+import android.provider.Settings.Secure;
 import android.util.Log;
 
 import com.openxc.messages.VehicleMessage;
@@ -52,15 +53,19 @@ public class FileRecorderSink implements VehicleDataSink {
     private String mLastFileName;
     private Context mContext;
     private String mDirectory;
+    private String mDeviceID;
+    private String mAndroidID;
 
     public FileRecorderSink(FileOpener fileOpener) {
         mFileOpener = fileOpener;
     }
 
-    public FileRecorderSink(FileOpener fileOpener, Context context, String directory){
+    public FileRecorderSink(FileOpener fileOpener, Context context, String directory, String device_id){
         mContext = context;
         mFileOpener = fileOpener;
         mDirectory = directory;
+        mDeviceID = device_id;
+        mAndroidID = Secure.getString(mContext.getContentResolver(), Secure.ANDROID_ID);
     }
     @Override
     public synchronized void receive(VehicleMessage message)
@@ -158,7 +163,7 @@ public class FileRecorderSink implements VehicleDataSink {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            uploadMultipart(mContext, mfilePath + ".zip", mLastFileName + ".zip");
+            uploadMultipart(mContext, mfilePath + ".zip", mAndroidID + "_" + mDeviceID + "_" + mLastFileName + ".zip");
         }
     }
 
