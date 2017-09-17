@@ -10,12 +10,19 @@ import com.openxc.util.FileOpener;
 
 import net.gotev.uploadservice.MultipartUploadRequest;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Locale;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
+
 
 /**
  * Record raw vehicle messages to a file as JSON.
@@ -32,8 +39,9 @@ import java.util.Locale;
 public class FileRecorderSink implements VehicleDataSink {
     private final static String TAG = "FileRecorderSink";
     private final static int INTER_TRIP_THRESHOLD_MINUTES = 5;
-    private final static int FILE_THRESHOLD_MINUTES = 2;
+    private final static int FILE_THRESHOLD_MINUTES = 1;
     private final static String UPLOAD_URL = "http://doodle.isi.edu/upload/com.siliconribbon.obd_openxc";
+    private final static int BUFFER_SIZE = 8192;
     private static SimpleDateFormat sDateFormatter =
             new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss", Locale.US);
 
@@ -64,14 +72,6 @@ public class FileRecorderSink implements VehicleDataSink {
                         > FILE_THRESHOLD_MINUTES * 60 * 1000) {
             Log.i(TAG, "Detected a new trip or splitting recorded trace file");
             try {
-                if(mLastFileName != null && mContext != null){
-                    //Zip and Upload
-                    Log.d(TAG, "zip and upload");
-                    File externalStoragePath = Environment.getExternalStorageDirectory();
-//                    File file = new File(externalStoragePath.getAbsolutePath() + File.separator + mDirectory + File.separator + mLastFileName);
-                    String mfilePath = externalStoragePath.getAbsolutePath() + File.separator + mDirectory + File.separator + mLastFileName;
-                    uploadMultipart(mContext, mfilePath, mLastFileName);
-                }
                 mLastFileName = openTimestampedFile();
                 mLastFileOpened = Calendar.getInstance();
             } catch(IOException e) {
@@ -114,6 +114,7 @@ public class FileRecorderSink implements VehicleDataSink {
         if(mWriter != null) {
             try {
                 mWriter.close();
+                compressAndUpload();
             } catch(IOException e) {
                 Log.w(TAG, "Unable to close output file", e);
             }
@@ -133,18 +134,61 @@ public class FileRecorderSink implements VehicleDataSink {
         return filename;
     }
 
-    private String uploadMultipart(final Context context, String file_path, String file_name) {
+    private synchronized void uploadMultipart(final Context context, String file_path, String file_name) {
         try {
-            String uploadId =
-                    new MultipartUploadRequest(context, UPLOAD_URL)
-                            .addFileToUpload(file_path, "file", file_name)
-                            .setAutoDeleteFilesAfterSuccessfulUpload(true)
-                            .setMaxRetries(1000000)
-                            .startUpload();
-            return uploadId;
+            new MultipartUploadRequest(context, UPLOAD_URL)
+                    .addFileToUpload(file_path, "file", file_name)
+                    .setAutoDeleteFilesAfterSuccessfulUpload(true)
+                    .setMaxRetries(1000000)
+                    .startUpload();
         } catch (Exception exc) {
             Log.e("AndroidUploadService", exc.getMessage(), exc);
-            return null;
         }
     }
+
+    private synchronized void compressAndUpload() {
+        if(mLastFileName != null && mContext != null){
+            Log.d(TAG, "zip and upload");
+            File externalStoragePath = Environment.getExternalStorageDirectory();
+            String mfilePath = externalStoragePath.getAbsolutePath() + File.separator + mDirectory + File.separator + mLastFileName;
+            String[] files = new String[1];
+            files[0] = mfilePath;
+            try {
+                zip(files, mfilePath + ".zip");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            uploadMultipart(mContext, mfilePath + ".zip", mLastFileName + ".zip");
+        }
+    }
+
+    private static void zip(String[] files, String zipFile) throws IOException {
+        BufferedInputStream origin;
+        ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream(zipFile)));
+        try {
+            byte data[] = new byte[BUFFER_SIZE];
+
+            for (String file : files) {
+                FileInputStream fi = new FileInputStream(file);
+                origin = new BufferedInputStream(fi, BUFFER_SIZE);
+                try {
+                    ZipEntry entry = new ZipEntry(file.substring(file.lastIndexOf("/") + 1));
+                    out.putNextEntry(entry);
+                    int count;
+                    while ((count = origin.read(data, 0, BUFFER_SIZE)) != -1) {
+                        out.write(data, 0, count);
+                    }
+                } finally {
+                    origin.close();
+                    File fileToDelete = new File(file);
+                    boolean deleted = fileToDelete.delete();
+                    Log.d(TAG, "Delete File " + file + ":" + String.valueOf(deleted));
+                }
+            }
+        }
+        finally {
+            out.close();
+        }
+    }
+
 }
