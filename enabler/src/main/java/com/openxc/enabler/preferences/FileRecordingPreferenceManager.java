@@ -55,8 +55,9 @@ public class FileRecordingPreferenceManager extends VehiclePreferenceManager {
                     stopRecording();
 
                     String device_id = getVehicleManager().getVehicleInterfaceDeviceId();
+                    String file_threshold_minutes = getPreferenceString(R.string.file_threshold_minutes);
                     mFileRecorder = new FileRecorderSink(
-                            new AndroidFileOpener(directory), getContext(), directory, device_id);
+                            new AndroidFileOpener(directory), getContext(), directory, device_id, file_threshold_minutes);
                     getVehicleManager().addSink(mFileRecorder);
                 }
             } else {

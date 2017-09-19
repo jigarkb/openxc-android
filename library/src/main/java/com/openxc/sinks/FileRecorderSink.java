@@ -40,7 +40,6 @@ import java.util.zip.ZipOutputStream;
 public class FileRecorderSink implements VehicleDataSink {
     private final static String TAG = "FileRecorderSink";
     private final static int INTER_TRIP_THRESHOLD_MINUTES = 5;
-    private final static int FILE_THRESHOLD_MINUTES = 1;
     private final static String UPLOAD_URL = "http://doodle.isi.edu/upload/com.siliconribbon.obd_openxc";
     private final static int BUFFER_SIZE = 8192;
     private static SimpleDateFormat sDateFormatter =
@@ -55,17 +54,24 @@ public class FileRecorderSink implements VehicleDataSink {
     private String mDirectory;
     private String mDeviceID;
     private String mAndroidID;
+    private Integer mFileThresholdMinutes;
 
     public FileRecorderSink(FileOpener fileOpener) {
         mFileOpener = fileOpener;
     }
 
-    public FileRecorderSink(FileOpener fileOpener, Context context, String directory, String device_id){
+    public FileRecorderSink(FileOpener fileOpener, Context context, String directory, String device_id, String file_threshold_minutes){
         mContext = context;
         mFileOpener = fileOpener;
         mDirectory = directory;
         mDeviceID = device_id;
         mAndroidID = Secure.getString(mContext.getContentResolver(), Secure.ANDROID_ID);
+        try {
+            mFileThresholdMinutes = Integer.parseInt(file_threshold_minutes);
+        }catch (Exception e){
+            mFileThresholdMinutes = 2;
+        }
+        Log.d(TAG, "Split files every " + mFileThresholdMinutes + " minutes");
     }
     @Override
     public synchronized void receive(VehicleMessage message)
@@ -74,7 +80,7 @@ public class FileRecorderSink implements VehicleDataSink {
                 Calendar.getInstance().getTimeInMillis() - mLastMessageReceived.getTimeInMillis()
                         > INTER_TRIP_THRESHOLD_MINUTES * 60 * 1000 ||
                 Calendar.getInstance().getTimeInMillis() - mLastFileOpened.getTimeInMillis()
-                        > FILE_THRESHOLD_MINUTES * 60 * 1000) {
+                        > mFileThresholdMinutes * 60 * 1000) {
             Log.i(TAG, "Detected a new trip or splitting recorded trace file");
             try {
                 mLastFileName = openTimestampedFile();

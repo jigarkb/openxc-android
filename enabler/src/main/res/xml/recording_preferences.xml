@@ -8,6 +8,13 @@
             android:summary="@string/recording_checkbox_summary"
             android:defaultValue="false" />
 
+    <EditTextPreference
+        android:key="@string/file_threshold_minutes"
+        android:title="@string/file_threshold_minutes_title"
+        android:summary="@string/file_threshold_minutes_summary"
+        android:inputType="number"
+        android:defaultValue="2" />
+
     <PreferenceScreen android:title="@string/view_recorded_traces">
         <intent android:action="com.openxc.enabler.viewTraces"/>
     </PreferenceScreen>

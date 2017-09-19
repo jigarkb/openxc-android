@@ -21,6 +21,8 @@
     <string name="recording_checkbox_summary">Record the vehicle data stream to a file</string>
     <string name="recording_directory_title">Output Directory</string>
     <string name="recording_directory_summary">Save recorded traces in this directory</string>
+    <string name="file_threshold_minutes_title">Trace File Threshold</string>
+    <string name="file_threshold_minutes_summary">Traces split between files every given minutes</string>
     <string name="uploading_checkbox_title">Upload Trace</string>
     <string name="uploading_checkbox_summary">Upload the vehicle data stream to a remote web server</string>
     <string name="uploading_path_title">Target URL</string>
